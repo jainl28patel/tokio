@@ -25,6 +25,10 @@ cfg_rt_multi_thread! {
     }
 }
 
+// Importing Verons
+pub(crate) mod verona_rt;
+pub(crate) use verona_rt::Verona;
+
 use crate::runtime::driver;
 
 #[derive(Debug, Clone)]
@@ -34,6 +38,9 @@ pub(crate) enum Handle {
 
     #[cfg(all(feature = "rt-multi-thread", not(target_os = "wasi")))]
     MultiThread(Arc<multi_thread::Handle>),
+
+    // adding verona handler
+    Verona(Arc<verona_rt::Handle>),
 
     #[cfg(all(tokio_unstable, feature = "rt-multi-thread", not(target_os = "wasi")))]
     MultiThreadAlt(Arc<multi_thread_alt::Handle>),
@@ -52,6 +59,9 @@ pub(super) enum Context {
     #[cfg(all(feature = "rt-multi-thread", not(target_os = "wasi")))]
     MultiThread(multi_thread::Context),
 
+    // adding verona context
+    Verona(verona_rt::Context),
+
     #[cfg(all(tokio_unstable, feature = "rt-multi-thread", not(target_os = "wasi")))]
     MultiThreadAlt(multi_thread_alt::Context),
 }
@@ -65,6 +75,9 @@ impl Handle {
 
             #[cfg(all(feature = "rt-multi-thread", not(target_os = "wasi")))]
             Handle::MultiThread(ref h) => &h.driver,
+
+            // add verona driver from handle
+            Handle::Verona(ref h) => &h.driver,
 
             #[cfg(all(tokio_unstable, feature = "rt-multi-thread", not(target_os = "wasi")))]
             Handle::MultiThreadAlt(ref h) => &h.driver,
@@ -91,6 +104,9 @@ cfg_rt! {
 
                 #[cfg(all(feature = "rt-multi-thread", not(target_os = "wasi")))]
                 $ty::MultiThread($h) => $e,
+
+                // add verona flavor
+                $ty::Verona($h) => $e,
 
                 #[cfg(all(tokio_unstable, feature = "rt-multi-thread", not(target_os = "wasi")))]
                 $ty::MultiThreadAlt($h) => $e,
@@ -122,6 +138,8 @@ cfg_rt! {
                 #[cfg(all(feature = "rt-multi-thread", not(target_os = "wasi")))]
                 Handle::MultiThread(h) => multi_thread::Handle::spawn(h, future, id),
 
+                Handle::Verona(h) => verona_rt::Handle::spawn(h, future, id),
+
                 #[cfg(all(tokio_unstable, feature = "rt-multi-thread", not(target_os = "wasi")))]
                 Handle::MultiThreadAlt(h) => multi_thread_alt::Handle::spawn(h, future, id),
             }
@@ -133,6 +151,8 @@ cfg_rt! {
 
                 #[cfg(all(feature = "rt-multi-thread", not(target_os = "wasi")))]
                 Handle::MultiThread(ref h) => h.shutdown(),
+
+                Handle::Verona(_) => {},
 
                 #[cfg(all(tokio_unstable, feature = "rt-multi-thread", not(target_os = "wasi")))]
                 Handle::MultiThreadAlt(ref h) => h.shutdown(),
@@ -151,6 +171,7 @@ cfg_rt! {
             }
         }
 
+        // TODO: Look whether changes needed or not for Verona
         cfg_rt_multi_thread! {
             cfg_unstable! {
                 pub(crate) fn expect_multi_thread_alt(&self) -> &Arc<multi_thread_alt::Handle> {
@@ -163,6 +184,7 @@ cfg_rt! {
         }
     }
 
+    // TODO: Implement all small dumy function for verona that does nothing
     cfg_metrics! {
         use crate::runtime::{SchedulerMetrics, WorkerMetrics};
 
@@ -170,6 +192,7 @@ cfg_rt! {
             pub(crate) fn num_workers(&self) -> usize {
                 match self {
                     Handle::CurrentThread(_) => 1,
+                    Handle::Verona(_) => 1,
                     #[cfg(all(feature = "rt-multi-thread", not(target_os = "wasi")))]
                     Handle::MultiThread(handle) => handle.num_workers(),
                     #[cfg(all(tokio_unstable, feature = "rt-multi-thread", not(target_os = "wasi")))]
@@ -218,6 +241,13 @@ cfg_rt! {
                 Context::CurrentThread(context) => context,
                 #[cfg(all(feature = "rt-multi-thread", not(target_os = "wasi")))]
                 _ => panic!("expected `CurrentThread::Context`")
+            }
+        }
+
+        pub(crate) fn expect_verona(&self) -> &verona_rt::Context {
+            match self {
+                Context::Verona(context) => context,
+                _ => panic!("expected `Verona::Context`"),
             }
         }
 

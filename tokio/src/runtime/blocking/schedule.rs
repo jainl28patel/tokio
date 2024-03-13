@@ -23,6 +23,7 @@ impl BlockingSchedule {
                 scheduler::Handle::CurrentThread(handle) => {
                     handle.driver.clock.inhibit_auto_advance();
                 }
+                scheduler::Handle::Verona(_) => {},
                 #[cfg(all(feature = "rt-multi-thread", not(target_os = "wasi")))]
                 scheduler::Handle::MultiThread(_) => {}
                 #[cfg(all(tokio_unstable, feature = "rt-multi-thread", not(target_os = "wasi")))]
@@ -45,6 +46,7 @@ impl task::Schedule for BlockingSchedule {
                     handle.driver.clock.allow_auto_advance();
                     handle.driver.unpark();
                 }
+                scheduler::Handle::Verona(_) => {}
                 #[cfg(all(feature = "rt-multi-thread", not(target_os = "wasi")))]
                 scheduler::Handle::MultiThread(_) => {}
                 #[cfg(all(tokio_unstable, feature = "rt-multi-thread", not(target_os = "wasi")))]

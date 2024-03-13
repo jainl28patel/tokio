@@ -4,7 +4,6 @@ use futures::{
 };
 use std::{
     ffi::c_void,
-    future::Future,
     sync::{Arc, Mutex},
     task::Context,
 };

@@ -355,6 +355,7 @@ impl Handle {
     pub fn runtime_flavor(&self) -> RuntimeFlavor {
         match self.inner {
             scheduler::Handle::CurrentThread(_) => RuntimeFlavor::CurrentThread,
+            scheduler::Handle::Verona(_) => RuntimeFlavor::Verona,
             #[cfg(all(feature = "rt-multi-thread", not(target_os = "wasi")))]
             scheduler::Handle::MultiThread(_) => RuntimeFlavor::MultiThread,
             #[cfg(all(tokio_unstable, feature = "rt-multi-thread", not(target_os = "wasi")))]
@@ -385,6 +386,7 @@ impl Handle {
         pub fn id(&self) -> runtime::Id {
             let owned_id = match &self.inner {
                 scheduler::Handle::CurrentThread(handle) => handle.owned_id(),
+                scheduler::Handle::Verona(handle) => handle.owned_id(),
                 #[cfg(all(feature = "rt-multi-thread", not(target_os = "wasi")))]
                 scheduler::Handle::MultiThread(handle) => handle.owned_id(),
                 #[cfg(all(tokio_unstable, feature = "rt-multi-thread", not(target_os = "wasi")))]
@@ -529,6 +531,7 @@ cfg_taskdump! {
         pub async fn dump(&self) -> crate::runtime::Dump {
             match &self.inner {
                 scheduler::Handle::CurrentThread(handle) => handle.dump(),
+                scheduler::Handle::Verona(handle) => handle.dump(),
                 #[cfg(all(feature = "rt-multi-thread", not(target_os = "wasi")))]
                 scheduler::Handle::MultiThread(handle) => {
                     // perform the trace in a separate thread so that the

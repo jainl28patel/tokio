@@ -1,5 +1,6 @@
 use crate::runtime::blocking::BlockingPool;
 use crate::runtime::scheduler::CurrentThread;
+use crate::runtime::scheduler::Verona;
 use crate::runtime::{context, EnterGuard, Handle};
 use crate::task::JoinHandle;
 
@@ -112,6 +113,7 @@ pub struct Runtime {
 pub enum RuntimeFlavor {
     /// The flavor that executes all tasks on the current thread.
     CurrentThread,
+    Verona,
     /// The flavor that executes tasks across multiple threads.
     MultiThread,
     /// The flavor that executes tasks across multiple threads.
@@ -124,6 +126,8 @@ pub enum RuntimeFlavor {
 pub(super) enum Scheduler {
     /// Execute all tasks on the current-thread.
     CurrentThread(CurrentThread),
+
+    Verona(Verona),
 
     /// Execute tasks across multiple threads.
     #[cfg(all(feature = "rt-multi-thread", not(target_os = "wasi")))]
@@ -347,6 +351,7 @@ impl Runtime {
 
         match &self.scheduler {
             Scheduler::CurrentThread(exec) => exec.block_on(&self.handle.inner, future),
+            Scheduler::Verona(exec) => exec.block_on(&self.handle.inner, future),
             #[cfg(all(feature = "rt-multi-thread", not(target_os = "wasi")))]
             Scheduler::MultiThread(exec) => exec.block_on(&self.handle.inner, future),
             #[cfg(all(tokio_unstable, feature = "rt-multi-thread", not(target_os = "wasi")))]
