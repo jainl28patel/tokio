@@ -15,19 +15,9 @@ use std::{
     sync::Mutex,
 };
 
-pub(crate) struct Verona {
-}
+pub(crate) struct Verona {}
 
-pub(crate) struct Handle {
-    /// Resource driver handles
-    pub(crate) driver: driver::Handle,
-
-    /// Blocking pool spawner
-    pub(crate) blocking_spawner: blocking::Spawner,
-
-    /// Current random number generator seed
-    pub(crate) seed_generator: RngSeedGenerator,
-}
+pub(crate) struct Handle {}
 
 pub(crate) struct Context {
     /// Scheduler handle
@@ -38,9 +28,11 @@ pub(crate) struct Context {
 }
 
 impl Verona {
-    pub(crate) fn new() -> Verona {
+    pub(crate) fn new() -> (Verona, Arc<Handle>) {
         verona_stubs::verona_runtime_init();
-        Verona {  }
+        let scheduler = Verona {};
+        let handle = Arc::new(Handle {});
+        (scheduler, handle)
     }
 
     pub(crate) fn block_on<F: Future>(&self, handle: &scheduler::Handle, future: F) -> F::Output {

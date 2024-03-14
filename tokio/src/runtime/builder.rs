@@ -7,7 +7,8 @@ use std::io;
 use std::time::Duration;
 
 use super::runtime::Scheduler;
-use super::scheduler;
+use super::scheduler::Verona;
+use super::{handle, scheduler};
 
 /// Builds Tokio Runtime with custom configuration values.
 ///
@@ -1135,9 +1136,22 @@ impl Builder {
     }
 
     fn build_verona_rt(&mut self) -> io::Result<Runtime> {
-        Ok(
-            Runtime::from_parts(Scheduler::Verona(scheduler), handle, blocking_pool)
-        )
+        let (scheduler, handle) = Verona::new();
+        let handle = Handle {
+            inner: scheduler::Handle::Verona(handle),
+        };
+
+        // TODO: Somehow remove afterwards
+        // Blocking pool
+        let blocking_pool = blocking::create_blocking_pool(self, self.max_blocking_threads);
+        let blocking_spawner = blocking_pool.spawner().clone();
+        
+
+        Ok(Runtime::from_parts(
+            Scheduler::Verona(scheduler),
+            handle,
+            blocking_pool
+        ))
     }
 
     fn metrics_poll_count_histogram_builder(&self) -> Option<HistogramBuilder> {
