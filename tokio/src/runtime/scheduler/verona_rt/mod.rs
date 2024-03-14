@@ -56,7 +56,7 @@ impl Verona {
         (scheduler, handle)
     }
 
-    pub(crate) fn block_on<F: Future>(&self, handle: &scheduler::Handle, future: F) -> F::Output
+    pub(crate) fn block_on<F: Future<Output = ()> + 'static + Send>(&self, future: F)
     {
         let boxed_future = future.boxed();
         let boxed_task = Arc::new(task::Task {
@@ -94,14 +94,15 @@ impl Handle {
         me: &Arc<Self>,
         future: F,
         id: crate::runtime::task::Id,
-    ) -> JoinHandle<F::Output>
+    ) 
+    // -> JoinHandle<F::Output>
     where
         F: crate::future::Future + Send + 'static,
         F::Output: Send + 'static,
     {
-        let (handle, notified) = me.shared.owned.bind(future, me.clone(), id);
+        // let (handle, notified) = me.shared.owned.bind(future, me.clone(), id);
 
-        handle
+        // handle
     }
 
     // reset woken to false and return original value

@@ -138,10 +138,12 @@ cfg_rt! {
                 #[cfg(all(feature = "rt-multi-thread", not(target_os = "wasi")))]
                 Handle::MultiThread(h) => multi_thread::Handle::spawn(h, future, id),
 
-                Handle::Verona(h) => verona_rt::Handle::spawn(h, future, id),
+                // Handle::Verona(h) => verona_rt::Handle::spawn(h, future, id),
 
                 #[cfg(all(tokio_unstable, feature = "rt-multi-thread", not(target_os = "wasi")))]
                 Handle::MultiThreadAlt(h) => multi_thread_alt::Handle::spawn(h, future, id),
+
+                _ => panic!("No handle spawning for verona"),
             }
         }
 

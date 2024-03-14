@@ -351,12 +351,21 @@ impl Runtime {
 
         match &self.scheduler {
             Scheduler::CurrentThread(exec) => exec.block_on(&self.handle.inner, future),
-            Scheduler::Verona(exec) => exec.block_on(&self.handle.inner, future),
+            // Scheduler::Verona(exec) => exec.block_on(&self.handle.inner, future),
             #[cfg(all(feature = "rt-multi-thread", not(target_os = "wasi")))]
             Scheduler::MultiThread(exec) => exec.block_on(&self.handle.inner, future),
             #[cfg(all(tokio_unstable, feature = "rt-multi-thread", not(target_os = "wasi")))]
             Scheduler::MultiThreadAlt(exec) => exec.block_on(&self.handle.inner, future),
+            _ => panic!("Verona not here"),
         }
+    }
+
+    pub fn block_on_verona<F: Future<Output = ()> + 'static + Send>(&self, future: F)
+     {
+        match &self.scheduler {
+            Scheduler::Verona(exec) => exec.block_on(future),
+            _ => panic!("block_on_verona takes only instance of verona"),
+        };
     }
 
     /// Enters the runtime context.
