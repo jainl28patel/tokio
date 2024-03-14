@@ -8,8 +8,6 @@ use std::{
     task::Context,
 };
 
-use crate::runtime::scheduler::verona_rt::verona_stubs;
-
 pub(crate) struct Task {
     pub(crate) future: Mutex<BoxFuture<'static, ()>>,
 }
@@ -17,7 +15,7 @@ pub(crate) struct Task {
 impl ArcWake for Task {
     fn wake_by_ref(arc_self: &Arc<Self>) {
         // FIXME: This creates a new task from a verona perspective
-        verona_stubs::verona_schedule_task(arc_self.clone());
+        // verona_stubs::verona_schedule_task(arc_self.clone());
     }
 }
 

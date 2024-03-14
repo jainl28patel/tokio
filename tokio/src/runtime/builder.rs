@@ -8,7 +8,7 @@ use std::time::Duration;
 
 use super::runtime::Scheduler;
 use super::scheduler::Verona;
-use super::{handle, scheduler};
+use super::scheduler;
 
 /// Builds Tokio Runtime with custom configuration values.
 ///
@@ -719,7 +719,7 @@ impl Builder {
         driver::Cfg {
             enable_pause_time: match self.kind {
                 Kind::CurrentThread => true,
-                Kind::Verona => true,
+                Kind::Verona => false,
                 #[cfg(all(feature = "rt-multi-thread", not(target_os = "wasi")))]
                 Kind::MultiThread => false,
                 #[cfg(all(tokio_unstable, feature = "rt-multi-thread", not(target_os = "wasi")))]
@@ -1136,16 +1136,18 @@ impl Builder {
     }
 
     fn build_verona_rt(&mut self) -> io::Result<Runtime> {
-        let (scheduler, handle) = Verona::new();
-        let handle = Handle {
-            inner: scheduler::Handle::Verona(handle),
-        };
+        let (driver, driver_handle) = driver::Driver::new(self.get_cfg())?;
 
         // TODO: Somehow remove afterwards
         // Blocking pool
         let blocking_pool = blocking::create_blocking_pool(self, self.max_blocking_threads);
         let blocking_spawner = blocking_pool.spawner().clone();
+        let seed_generator_2 = self.seed_generator.next_generator();
         
+        let (scheduler, handle) = Verona::new(driver,driver_handle, blocking_spawner, seed_generator_2);
+        let handle = Handle {
+            inner: scheduler::Handle::Verona(handle),
+        };
 
         Ok(Runtime::from_parts(
             Scheduler::Verona(scheduler),
