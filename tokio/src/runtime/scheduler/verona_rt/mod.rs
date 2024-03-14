@@ -43,8 +43,41 @@ impl Verona {
         Verona {  }
     }
 
-    pub(crate) fn block_on() {
+    pub(crate) fn block_on<F: Future>(&self, handle: &scheduler::Handle, future: F) -> F::Output {
+        pin!(future);
 
+        crate::runtime::context::enter_runtime(handle, false, |blocking| {
+            let handle = handle.as_current_thread();
+
+            // Attempt to steal the scheduler core and block_on the future if we can
+            // there, otherwise, lets select on a notification that the core is
+            // available or the future is complete.
+            loop {
+                if let Some(core) = self.take_core(handle) {
+                    return core.block_on(future);
+                } else {
+                    let notified = self.notify.notified();
+                    pin!(notified);
+
+                    if let Some(out) = blocking
+                        .block_on(poll_fn(|cx| {
+                            if notified.as_mut().poll(cx).is_ready() {
+                                return Ready(None);
+                            }
+
+                            if let Ready(out) = future.as_mut().poll(cx) {
+                                return Ready(Some(out));
+                            }
+
+                            Pending
+                        }))
+                        .expect("Failed to `Enter::block_on`")
+                    {
+                        return out;
+                    }
+                }
+            }
+        })
     }
 
     pub(crate) fn run(&self) {

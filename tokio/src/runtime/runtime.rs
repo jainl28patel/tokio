@@ -474,6 +474,9 @@ impl Drop for Runtime {
                 let _guard = context::try_set_current(&self.handle.inner);
                 current_thread.shutdown(&self.handle.inner);
             }
+            Scheduler::Verona(verona_rt) => {
+                verona_rt.shutdown(&self.handle.inner);
+            }
             #[cfg(all(feature = "rt-multi-thread", not(target_os = "wasi")))]
             Scheduler::MultiThread(multi_thread) => {
                 // The threaded scheduler drops its tasks on its worker threads, which is

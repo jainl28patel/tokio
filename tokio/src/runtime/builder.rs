@@ -6,6 +6,9 @@ use std::fmt;
 use std::io;
 use std::time::Duration;
 
+use super::runtime::Scheduler;
+use super::scheduler;
+
 /// Builds Tokio Runtime with custom configuration values.
 ///
 /// Methods can be chained in order to set the configuration values. The
@@ -199,6 +202,7 @@ pub(crate) type ThreadNameFn = std::sync::Arc<dyn Fn() -> String + Send + Sync +
 #[derive(Clone, Copy)]
 pub(crate) enum Kind {
     CurrentThread,
+    Verona,
     #[cfg(all(feature = "rt-multi-thread", not(target_os = "wasi")))]
     MultiThread,
     #[cfg(all(tokio_unstable, feature = "rt-multi-thread", not(target_os = "wasi")))]
@@ -222,6 +226,11 @@ impl Builder {
         const EVENT_INTERVAL: u32 = 61;
 
         Builder::new(Kind::CurrentThread, EVENT_INTERVAL)
+    }
+
+    pub fn new_verona() -> Builder {
+        const EVENT_INTERVAL: u32 = 61;
+        Builder::new(Kind::Verona, EVENT_INTERVAL)
     }
 
     cfg_not_wasi! {
@@ -697,6 +706,7 @@ impl Builder {
     pub fn build(&mut self) -> io::Result<Runtime> {
         match &self.kind {
             Kind::CurrentThread => self.build_current_thread_runtime(),
+            Kind::Verona => self.build_verona_rt(),
             #[cfg(all(feature = "rt-multi-thread", not(target_os = "wasi")))]
             Kind::MultiThread => self.build_threaded_runtime(),
             #[cfg(all(tokio_unstable, feature = "rt-multi-thread", not(target_os = "wasi")))]
@@ -708,6 +718,7 @@ impl Builder {
         driver::Cfg {
             enable_pause_time: match self.kind {
                 Kind::CurrentThread => true,
+                Kind::Verona => true,
                 #[cfg(all(feature = "rt-multi-thread", not(target_os = "wasi")))]
                 Kind::MultiThread => false,
                 #[cfg(all(tokio_unstable, feature = "rt-multi-thread", not(target_os = "wasi")))]
@@ -1121,6 +1132,12 @@ impl Builder {
             handle,
             blocking_pool,
         ))
+    }
+
+    fn build_verona_rt(&mut self) -> io::Result<Runtime> {
+        Ok(
+            Runtime::from_parts(Scheduler::Verona(scheduler), handle, blocking_pool)
+        )
     }
 
     fn metrics_poll_count_histogram_builder(&self) -> Option<HistogramBuilder> {
