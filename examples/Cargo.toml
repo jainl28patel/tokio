@@ -96,5 +96,9 @@ name = "dump"
 path = "dump.rs"
 
 [[example]]
-name = "verona_test"
-path = "verona_test.rs"
+name = "verona_basic_test"
+path = "verona_basic_test.rs"
+
+[[example]]
+name = "verona_io_test"
+path = "verona_io_test.rs"

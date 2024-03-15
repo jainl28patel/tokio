@@ -56,11 +56,10 @@ pub(crate) enum Handle {
 pub(super) enum Context {
     CurrentThread(current_thread::Context),
 
+    Verona(verona_rt::Context),
+
     #[cfg(all(feature = "rt-multi-thread", not(target_os = "wasi")))]
     MultiThread(multi_thread::Context),
-
-    // adding verona context
-    Verona(verona_rt::Context),
 
     #[cfg(all(tokio_unstable, feature = "rt-multi-thread", not(target_os = "wasi")))]
     MultiThreadAlt(multi_thread_alt::Context),

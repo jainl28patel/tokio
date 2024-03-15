@@ -113,6 +113,7 @@ pub struct Runtime {
 pub enum RuntimeFlavor {
     /// The flavor that executes all tasks on the current thread.
     CurrentThread,
+    /// The flavor that executes all tasks on the verona runtime.
     Verona,
     /// The flavor that executes tasks across multiple threads.
     MultiThread,
@@ -362,6 +363,7 @@ impl Runtime {
 
     pub fn block_on_verona<F: Future<Output = ()> + 'static + Send>(&self, future: F)
      {
+        let _enter = self.enter();
         match &self.scheduler {
             Scheduler::Verona(exec) => exec.block_on(future),
             _ => panic!("block_on_verona takes only instance of verona"),
@@ -484,6 +486,7 @@ impl Drop for Runtime {
                 current_thread.shutdown(&self.handle.inner);
             }
             Scheduler::Verona(verona_rt) => {
+                let _guard = context::try_set_current(&self.handle.inner);
                 verona_rt.shutdown(&self.handle.inner);
             }
             #[cfg(all(feature = "rt-multi-thread", not(target_os = "wasi")))]
