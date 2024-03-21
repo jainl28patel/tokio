@@ -120,12 +120,13 @@ impl fmt::Debug for Handle {
 }
 
 pub(crate) fn spawn(future: impl Future<Output = ()> + 'static + Send) {
-    println!("Wont print sorry!");
-//     let boxed_future = future.boxed();
-//     let boxed_task = Arc::new(Task {
-//         future: Mutex::new(boxed_future),
-//     });
-//     verona_stubs::verona_schedule_task(boxed_task);
+    // println!("Wont print sorry!");
+    let boxed_future = future.boxed();
+    let boxed_task = Arc::new(task::Task {
+        future: Mutex::new(boxed_future),
+    });
+    verona_stubs::verona_schedule_task(boxed_task);
+    verona_stubs::verona_scheduler_run();
 }
 
 impl Wake for Handle {
