@@ -36,11 +36,12 @@ pub(crate) enum Handle {
     #[cfg(feature = "rt")]
     CurrentThread(Arc<current_thread::Handle>),
 
+    // adding verona handler
+    #[cfg(feature = "rt")]
+    Verona(Arc<verona_rt::Handle>),
+
     #[cfg(all(feature = "rt-multi-thread", not(target_os = "wasi")))]
     MultiThread(Arc<multi_thread::Handle>),
-
-    // adding verona handler
-    Verona(Arc<verona_rt::Handle>),
 
     #[cfg(all(tokio_unstable, feature = "rt-multi-thread", not(target_os = "wasi")))]
     MultiThreadAlt(Arc<multi_thread_alt::Handle>),
@@ -72,11 +73,11 @@ impl Handle {
             #[cfg(feature = "rt")]
             Handle::CurrentThread(ref h) => &h.driver,
 
-            #[cfg(all(feature = "rt-multi-thread", not(target_os = "wasi")))]
-            Handle::MultiThread(ref h) => &h.driver,
-
             // add verona driver from handle
             Handle::Verona(ref h) => &h.driver,
+
+            #[cfg(all(feature = "rt-multi-thread", not(target_os = "wasi")))]
+            Handle::MultiThread(ref h) => &h.driver,
 
             #[cfg(all(tokio_unstable, feature = "rt-multi-thread", not(target_os = "wasi")))]
             Handle::MultiThreadAlt(ref h) => &h.driver,

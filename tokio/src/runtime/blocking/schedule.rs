@@ -1,7 +1,7 @@
 #[cfg(feature = "test-util")]
 use crate::runtime::scheduler;
 use crate::runtime::task::{self, Task};
-use crate::runtime::Handle;
+use crate::runtime::{handle, Handle};
 
 /// `task::Schedule` implementation that does nothing (except some bookkeeping
 /// in test-util builds). This is unique to the blocking scheduler as tasks
@@ -23,7 +23,9 @@ impl BlockingSchedule {
                 scheduler::Handle::CurrentThread(handle) => {
                     handle.driver.clock.inhibit_auto_advance();
                 }
-                scheduler::Handle::Verona(_) => {},
+                scheduler::Handle::Verona(handle) => {
+                    handle.driver.clock.inhibit_auto_advance();
+                },
                 #[cfg(all(feature = "rt-multi-thread", not(target_os = "wasi")))]
                 scheduler::Handle::MultiThread(_) => {}
                 #[cfg(all(tokio_unstable, feature = "rt-multi-thread", not(target_os = "wasi")))]
@@ -46,7 +48,10 @@ impl task::Schedule for BlockingSchedule {
                     handle.driver.clock.allow_auto_advance();
                     handle.driver.unpark();
                 }
-                scheduler::Handle::Verona(_) => {}
+                scheduler::Handle::Verona(handle) => {
+                    handle.driver.clock.allow_auto_advance();
+                    handle.driver.unpark();
+                }
                 #[cfg(all(feature = "rt-multi-thread", not(target_os = "wasi")))]
                 scheduler::Handle::MultiThread(_) => {}
                 #[cfg(all(tokio_unstable, feature = "rt-multi-thread", not(target_os = "wasi")))]

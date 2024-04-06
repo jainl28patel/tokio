@@ -719,7 +719,7 @@ impl Builder {
         driver::Cfg {
             enable_pause_time: match self.kind {
                 Kind::CurrentThread => true,
-                Kind::Verona => false,
+                Kind::Verona => true,
                 #[cfg(all(feature = "rt-multi-thread", not(target_os = "wasi")))]
                 Kind::MultiThread => false,
                 #[cfg(all(tokio_unstable, feature = "rt-multi-thread", not(target_os = "wasi")))]

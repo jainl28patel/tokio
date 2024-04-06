@@ -33,6 +33,7 @@ use std::error::Error;
 use std::io::{stdin, Read};
 use std::net::SocketAddr;
 use tokio::net::UdpSocket;
+use tracing_subscriber::registry::Data;
 
 fn get_stdin_data() -> Result<Vec<u8>, Box<dyn std::error::Error>> {
     let mut buf = Vec::new();
@@ -44,7 +45,7 @@ fn get_stdin_data() -> Result<Vec<u8>, Box<dyn std::error::Error>> {
 async fn main() -> Result<(), Box<dyn Error>> {
     let remote_addr: SocketAddr = env::args()
         .nth(1)
-        .unwrap_or_else(|| "127.0.0.1:8080".into())
+        .unwrap_or_else(|| "10.61.119.144:696".into())
         .parse()?;
 
     // We use port 0 to let the operating system allocate an available port for us.
@@ -58,8 +59,9 @@ async fn main() -> Result<(), Box<dyn Error>> {
     let socket = UdpSocket::bind(local_addr).await?;
     const MAX_DATAGRAM_SIZE: usize = 65_507;
     socket.connect(&remote_addr).await?;
-    let data = get_stdin_data()?;
-    socket.send(&data).await?;
+    // let data = get_stdin_data()?;
+    let data = b"hello world\n";
+    socket.send(data).await?;
     let mut data = vec![0u8; MAX_DATAGRAM_SIZE];
     let len = socket.recv(&mut data).await?;
     println!(

@@ -8,6 +8,8 @@ use std::{
     task::Context,
 };
 
+use crate::runtime::scheduler::verona_rt::{self, verona_stubs::verona_schedule_task};
+
 pub(crate) struct Task {
     pub(crate) future: Mutex<BoxFuture<'static, ()>>,
 }
@@ -15,7 +17,7 @@ pub(crate) struct Task {
 impl ArcWake for Task {
     fn wake_by_ref(arc_self: &Arc<Self>) {
         // FIXME: This creates a new task from a verona perspective
-        // verona_stubs::verona_schedule_task(arc_self.clone());
+        verona_schedule_task(arc_self.clone());
     }
 }
 
@@ -29,13 +31,10 @@ pub extern "C" fn poll_future_in_rust(task: *mut c_void) {
         let waker = waker_ref(&boxed_task);
         let context = &mut Context::from_waker(&waker);
 
-        loop {
             if boxed_future.as_mut().poll(context).is_pending() {
             } else {
                 println!("Task is finished");
-                break;
             }
-        }
 
     }
 }

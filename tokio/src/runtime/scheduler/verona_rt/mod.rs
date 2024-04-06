@@ -1,27 +1,35 @@
 
 use futures::FutureExt;
+use libc::sleep;
 
 use crate::loom::sync::Arc;
 use crate::runtime::driver::{self, Driver};
 use crate::runtime::scheduler::{self, Defer};
 use crate::runtime::task::{JoinHandle, Task};
-use crate::runtime::blocking;
-use crate::util::{waker_ref, RngSeedGenerator, Wake, WakerRef};
-use core::fmt;
+use crate::runtime::{blocking, context, handle};
+use crate::util::{waker_ref, RngSeedGenerator, TryLock, Wake, WakerRef};
+use core::{fmt, time};
+use std::pin::Pin;
 use std::sync::atomic::Ordering::{AcqRel, Release};
 
 pub(crate) mod verona_stubs;
 pub(crate) mod task;
+pub(crate) mod timerfuture;
 
 use std::task::Waker;
+use std::time::Duration;
 use std::{
     future::Future,
     sync::Mutex,
 };
 
-pub(crate) struct Verona {}
+pub(crate) struct Verona {
+    handle: Arc<Handle>,
+}
 
 pub(crate) struct Handle {
+    driver_only: TryLock<Driver>,
+
     pub(crate) driver: driver::Handle,
 
     /// Blocking pool spawner
@@ -47,12 +55,16 @@ impl Verona {
         seed_generator: RngSeedGenerator,
     ) -> (Verona, Arc<Handle>) {
         verona_stubs::verona_runtime_init();
-        let scheduler = Verona {};
         let handle = Arc::new(Handle {
+            driver_only: TryLock::new(driver),
             driver: driver_handle,
             blocking_spawner,
             seed_generator,
         });
+        let scheduler = Verona {
+            handle: handle.clone()
+        };
+
         (scheduler, handle)
     }
 
@@ -63,6 +75,27 @@ impl Verona {
             future: Mutex::new(boxed_future),
         });
         verona_stubs::verona_schedule_task(boxed_task);
+
+
+        let handle_clone = self.handle.clone();
+
+        let boxed_future2 = Box::pin(async move { // `move` to take ownership
+            loop {
+                {
+                    let mut handle = handle_clone.driver_only.try_lock().unwrap();
+                    println!("------- calling park_timeout ------");
+                    handle.park_timeout(&handle_clone.driver, Duration::from_millis(0)); // Using the cloned version
+                }
+                timerfuture::TimerFuture::new(Duration::new(0, 100000)).await;
+            }
+        });
+        
+        // The rest of your code remains the same
+        let boxed_task2 = Arc::new(task::Task {
+            future: Mutex::new(boxed_future2),
+        });
+
+        verona_stubs::verona_schedule_task(boxed_task2);
         self.run();
     }
 

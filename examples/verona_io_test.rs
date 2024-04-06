@@ -8,6 +8,7 @@ use tokio::runtime;
 fn main() {
     // Async File Read using tokio::fs::File
     tokio::runtime::Builder::new_verona()
+        .enable_all()
         .build()
         .unwrap()
         .block_on_verona(
@@ -17,16 +18,16 @@ fn main() {
                     "/Users/jainilpatel/Projects/rust-async-runtime/tokio/examples/foo.txt"
                 ).await.unwrap();
 
-                f2.write_all(b"Hello, world!").await.unwrap();
+                f2.write_all(b"fuck you!").await.unwrap();
 
-                // read from file
-                let mut f = File::open(
-                    "/Users/jainilpatel/Projects/rust-async-runtime/tokio/examples/foo.txt"
-                ).await.unwrap();
+                // // read from file
+                // let mut f = File::open(
+                //     "/Users/jainilpatel/Projects/rust-async-runtime/tokio/examples/foo.txt"
+                // ).await.unwrap();
 
-                let mut buffer = [0; 12];
-                let n = f.read(buffer.as_mut()).await.unwrap();
-                println!("The bytes: {:?}", &buffer[..n]);
+                // let mut buffer = [0; 12];
+                // let n = f.read(buffer.as_mut()).await.unwrap();
+                // println!("The bytes: {:?}", &buffer[..n]);
             }
         );
 }

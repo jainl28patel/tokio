@@ -41,7 +41,7 @@ impl Handle {
     /// [`TcpStream`]. It will also allow you to call methods such as
     /// [`tokio::spawn`] and [`Handle::current`] without panicking.
     ///
-    /// # Panics
+    /// # Panics [This is the Problem ahhhhhhhh]
     ///
     /// When calling `Handle::enter` multiple times, the returned guards
     /// **must** be dropped in the reverse order that they were acquired.
@@ -135,9 +135,10 @@ impl Handle {
     /// ```
     #[track_caller]
     pub fn current() -> Self {
-        Handle {
+        let ret = Handle {
             inner: scheduler::Handle::current(),
-        }
+        };
+        ret
     }
 
     /// Returns a Handle view over the currently running Runtime
