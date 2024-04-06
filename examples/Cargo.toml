@@ -106,3 +106,7 @@ path = "verona_io_test.rs"
 [[example]]
 name = "verona_net_test"
 path = "verona_net_test.rs"
+
+[[example]]
+name = "verona_chat_test"
+path = "verona_chat_test.rs"

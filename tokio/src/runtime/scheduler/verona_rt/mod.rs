@@ -83,7 +83,6 @@ impl Verona {
             loop {
                 {
                     let mut handle = handle_clone.driver_only.try_lock().unwrap();
-                    println!("------- calling park_timeout ------");
                     handle.park_timeout(&handle_clone.driver, Duration::from_millis(0)); // Using the cloned version
                 }
                 timerfuture::TimerFuture::new(Duration::new(0, 100000)).await;
