@@ -8,7 +8,7 @@ use std::{
     task::Context,
 };
 
-use crate::runtime::scheduler::verona_rt::{self, verona_stubs::verona_schedule_task};
+use crate::runtime::scheduler::verona_rt::verona_stubs::verona_schedule_task;
 
 pub(crate) struct Task {
     pub(crate) future: Mutex<BoxFuture<'static, ()>>,

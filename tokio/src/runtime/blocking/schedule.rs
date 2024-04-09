@@ -1,7 +1,7 @@
 #[cfg(feature = "test-util")]
 use crate::runtime::scheduler;
 use crate::runtime::task::{self, Task};
-use crate::runtime::{handle, Handle};
+use crate::runtime::Handle;
 
 /// `task::Schedule` implementation that does nothing (except some bookkeeping
 /// in test-util builds). This is unique to the blocking scheduler as tasks

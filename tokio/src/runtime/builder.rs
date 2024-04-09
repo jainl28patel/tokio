@@ -229,6 +229,7 @@ impl Builder {
         Builder::new(Kind::CurrentThread, EVENT_INTERVAL)
     }
 
+    /// Returns a new builder with the Verona scheduler selected.
     pub fn new_verona() -> Builder {
         const EVENT_INTERVAL: u32 = 61;
         Builder::new(Kind::Verona, EVENT_INTERVAL)

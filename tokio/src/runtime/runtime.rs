@@ -361,6 +361,7 @@ impl Runtime {
         }
     }
 
+    /// Runs a future to completion on the Verona runtime.
     pub fn block_on_verona<F: Future<Output = ()> + 'static + Send>(&self, future: F)
      {
         let _enter = self.enter();

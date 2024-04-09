@@ -1,16 +1,12 @@
 
 use futures::FutureExt;
-use libc::sleep;
 
 use crate::loom::sync::Arc;
 use crate::runtime::driver::{self, Driver};
 use crate::runtime::scheduler::{self, Defer};
-use crate::runtime::task::{JoinHandle, Task};
-use crate::runtime::{blocking, context, handle};
-use crate::util::{waker_ref, RngSeedGenerator, TryLock, Wake, WakerRef};
-use core::{fmt, time};
-use std::pin::Pin;
-use std::sync::atomic::Ordering::{AcqRel, Release};
+use crate::runtime::blocking;
+use crate::util::{RngSeedGenerator, TryLock};
+use core::fmt;
 
 pub(crate) mod verona_stubs;
 pub(crate) mod task;
@@ -98,8 +94,8 @@ impl Verona {
         verona_stubs::verona_schedule_task(boxed_task);
     }
 
-    pub(crate) fn shutdown(&mut self, handle:&scheduler::Handle) {
-
+    pub(crate) fn shutdown(&mut self, _handle:&scheduler::Handle) {
+        // TODO: implement shutdown
     }
 }
 
@@ -129,7 +125,7 @@ impl fmt::Debug for Verona {
 
 impl Handle {
     pub(crate) fn spawn_verona_task<F: Future<Output = ()> + 'static + Send>(
-        me: &Arc<Self>,
+        _me: &Arc<Self>,
         future: F,
     ) 
     where
