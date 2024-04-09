@@ -11,18 +11,21 @@ fn main() {
             // let result = tokio::io::AsyncWriteExt::write_all(&mut stream, b"hello world\n").await;
             // println!("wrote to stream; success={:?}", result.is_ok());
 
-            let mut stream = std::net::TcpStream::connect("127.0.0.1:6142").unwrap();
-            println!("created stream");
+            // let mut stream = std::net::TcpStream::connect("127.0.0.1:6142").unwrap();
+            // println!("created stream");
 
-            let result = std::io::Write::write(&mut stream, b"hello world\n");
-            println!("wrote to stream; success={:?}", result.is_ok());
+            // let result = std::io::Write::write(&mut stream, b"hello world\n");
+            // println!("wrote to stream; success={:?}", result.is_ok());
 
-            // let socket = tokio::net::UdpSocket::bind("127.0.0.1:8081").await.unwrap();
-            // socket.connect("127.0.0.1:8080").await.unwrap();
+            let socket = tokio::net::UdpSocket::bind("127.0.0.1:8081").await.unwrap();
+            socket.connect("127.0.0.1:8080").await.unwrap();
 
-            // println!("Connected to {}", socket.local_addr().unwrap());
+            println!("Connected to {}", socket.local_addr().unwrap());
 
-            // // Send a message
-            // socket.send(b"hello world").await.unwrap();
+            // Send a message
+            socket.send(b"hello world").await.unwrap();
+            let mut buf = [0; 1024];
+            let n = socket.recv(&mut buf).await.unwrap();
+            println!("Received: {:?}", buf[..n].to_vec());
         });
 }

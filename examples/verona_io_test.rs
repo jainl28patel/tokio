@@ -18,7 +18,7 @@ fn main() {
                     "/Users/jainilpatel/Projects/rust-async-runtime/tokio/examples/foo.txt"
                 ).await.unwrap();
 
-                f2.write_all(b"fuck you!").await.unwrap();
+                f2.write_all(b"hello world2").await.unwrap();
 
                 // // read from file
                 // let mut f = File::open(

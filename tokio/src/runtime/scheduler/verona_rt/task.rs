@@ -30,11 +30,6 @@ pub extern "C" fn poll_future_in_rust(task: *mut c_void) {
         let mut boxed_future = boxed_task.future.lock().unwrap();
         let waker = waker_ref(&boxed_task);
         let context = &mut Context::from_waker(&waker);
-
-            if boxed_future.as_mut().poll(context).is_pending() {
-            } else {
-                println!("Task is finished");
-            }
-
+        boxed_future.as_mut().poll(context).is_pending();
     }
 }

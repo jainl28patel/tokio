@@ -76,25 +76,13 @@ impl Verona {
         });
         verona_stubs::verona_schedule_task(boxed_task);
 
-
         let handle_clone = self.handle.clone();
-
-        let boxed_future2 = Box::pin(async move { // `move` to take ownership
-            loop {
-                {
-                    let mut handle = handle_clone.driver_only.try_lock().unwrap();
-                    handle.park_timeout(&handle_clone.driver, Duration::from_millis(0)); // Using the cloned version
-                }
-                timerfuture::TimerFuture::new(Duration::new(0, 100000)).await;
-            }
+        
+        // spawn the driver parker
+        spawn_verona_task(async {
+            poll_driver(handle_clone);
         });
         
-        // The rest of your code remains the same
-        let boxed_task2 = Arc::new(task::Task {
-            future: Mutex::new(boxed_future2),
-        });
-
-        verona_stubs::verona_schedule_task(boxed_task2);
         self.run();
     }
 
@@ -102,17 +90,35 @@ impl Verona {
         verona_stubs::verona_scheduler_run();
     }
 
-    // pub(crate) fn spawn(&self, future: impl Future<Output = ()> + 'static + Send) {
-    //     let boxed_future = future.boxed();
-    //     let boxed_task = Arc::new(Task {
-    //         future: Mutex::new(boxed_future),
-    //     });
-    //     verona_stubs::verona_schedule_task(boxed_task);
-    // }
+    pub(crate) fn spawn_verona_task<F: Future<Output = ()> + 'static + Send>(&self, future: F) {
+        let boxed_future = future.boxed();
+        let boxed_task = Arc::new(task::Task {
+            future: Mutex::new(boxed_future),
+        });
+        verona_stubs::verona_schedule_task(boxed_task);
+    }
 
     pub(crate) fn shutdown(&mut self, handle:&scheduler::Handle) {
 
     }
+}
+
+// self-spawning behaviour
+fn poll_driver(handle_clone: Arc<Handle>) {
+    let mut handle = handle_clone.driver_only.try_lock().unwrap();
+    handle.park_timeout(&handle_clone.driver, Duration::from_millis(0));
+    let handle_clone = handle_clone.clone();
+    spawn_verona_task(async move {
+        poll_driver(handle_clone);
+    });
+}
+
+pub(crate) fn spawn_verona_task<F: Future<Output = ()> + 'static + Send>(future: F) {
+    let boxed_future = future.boxed();
+    let boxed_task = Arc::new(task::Task {
+        future: Mutex::new(boxed_future),
+    });
+    verona_stubs::verona_schedule_task(boxed_task);
 }
 
 impl fmt::Debug for Verona {
@@ -122,54 +128,25 @@ impl fmt::Debug for Verona {
 }
 
 impl Handle {
-    pub(crate) fn spawn<F>(
+    pub(crate) fn spawn_verona_task<F: Future<Output = ()> + 'static + Send>(
         me: &Arc<Self>,
         future: F,
-        id: crate::runtime::task::Id,
     ) 
-    // -> JoinHandle<F::Output>
     where
         F: crate::future::Future + Send + 'static,
         F::Output: Send + 'static,
     {
-        // let (handle, notified) = me.shared.owned.bind(future, me.clone(), id);
-
-        // handle
+        let boxed_future = future.boxed();
+        let boxed_task = Arc::new(task::Task {
+            future: Mutex::new(boxed_future),
+        });
+        verona_stubs::verona_schedule_task(boxed_task);
     }
-
-    // reset woken to false and return original value
-    pub(crate) fn reset_woken(&self) -> bool {
-        // self.shared.woken.swap(false, AcqRel)
-        true
-    }
-
 }
 
 impl fmt::Debug for Handle {
     fn fmt(&self, fmt: &mut fmt::Formatter<'_>) -> fmt::Result {
         fmt.debug_struct("current_thread::Handle { ... }").finish()
-    }
-}
-
-pub(crate) fn spawn(future: impl Future<Output = ()> + 'static + Send) {
-    // println!("Wont print sorry!");
-    let boxed_future = future.boxed();
-    let boxed_task = Arc::new(task::Task {
-        future: Mutex::new(boxed_future),
-    });
-    verona_stubs::verona_schedule_task(boxed_task);
-    verona_stubs::verona_scheduler_run();
-}
-
-impl Wake for Handle {
-    fn wake(arc_self: Arc<Self>) {
-        // Wake::wake_by_ref(&arc_self);
-    }
-
-    /// Wake by reference
-    fn wake_by_ref(arc_self: &Arc<Self>) {
-        // arc_self.shared.woken.store(true, Release);
-        // arc_self.driver.unpark();
     }
 }
 
